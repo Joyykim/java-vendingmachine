@@ -1,5 +1,7 @@
 package vendingmachine.model;
 
+import vendingmachine.exception.VendingMachineException;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -7,6 +9,7 @@ public class VendingMachine {
 
     private final ChangesModule changesModule;
     private final List<Product> products;
+    private int remainingCash = 0;
 
     public VendingMachine(ChangesModule changesModule, List<Product> products) {
         this.changesModule = changesModule;
@@ -17,22 +20,18 @@ public class VendingMachine {
         this(changesModule, new ArrayList<>());
     }
 
+    public VendingMachine(int initAmount) {
+        this(new ChangesModule(initAmount));
+    }
+
     public void addProducts(List<Product> products) {
         this.products.addAll(products);
     }
 
     public void buyProduct(String productName) {
         Product product = findProduct(productName);
-
-        if (product.isAmountEmpty()) {
-            throw new IllegalArgumentException("해당 물품의 남은 수량이 없음");
-        }
-        if (changesModule.remainChangeIsNotEnough(product.getPrice())) {
-            throw new IllegalArgumentException("자판기에 투입된 금액이 부족함");
-        }
-
-        product.reduceAmount();
-        changesModule.withdraw(product.getPrice());
+        validateAvailableToBuy(product);
+        buy(product);
     }
 
     private Product findProduct(String productName) {
@@ -40,33 +39,52 @@ public class VendingMachine {
                 .filter(product -> product.sameName(productName))
                 .findAny()
                 .orElseThrow(() -> {
-                    throw new IllegalArgumentException("존재하지 않는 상품명");
+                    throw new VendingMachineException("존재하지 않는 상품명");
                 });
     }
 
-    public boolean canBuyAny() {
-        int minimumPrice = products.get(0).getPrice();
-        for (Product product : products) {
-            if (product.getPrice() < minimumPrice) {
-                minimumPrice = product.getPrice();
-            }
+    private void validateAvailableToBuy(Product product) {
+        if (product.isSoldOut()) {
+            throw new VendingMachineException("해당 물품의 남은 수량이 없음");
         }
-//        int minimumPrice = products.stream()
-//                .mapToInt(Product::getAmount)
-//                .min()
-//                .orElse(0);
-        return minimumPrice <= changesModule.getAmount();
+        if (product.getPrice() > remainingCash) {
+            throw new VendingMachineException("자판기에 투입된 금액이 부족함");
+        }
     }
 
-    public int getChanges() {
-        return changesModule.getAmount();
+    private void buy(Product product) {
+        remainingCash -= product.getPrice();
+        product.reduceAmount();
     }
 
-    public List<Coin> getChangesByCoin() {
-        return changesModule.getChangesByCoin();
+    public boolean canBuyAny() {
+        if (allProductsIsSoldOut()) {
+            return false;
+        }
+        return minimumPrice() <= remainingCash;
     }
 
-    public void putMoney(int money) {
-        changesModule.put(money);
+    private boolean allProductsIsSoldOut() {
+        return products.stream()
+                .allMatch(Product::isSoldOut);
+    }
+
+    private int minimumPrice() {
+        return products.stream()
+                .filter(product -> !product.isSoldOut())
+                .mapToInt(Product::getPrice)
+                .min().orElse(0);
+    }
+
+    public int getRemainingCash() {
+        return remainingCash;
+    }
+
+    public Changes getChanges() {
+        return changesModule.getChanges(remainingCash);
+    }
+
+    public void putCash(int cash) {
+        remainingCash += cash;
     }
 }

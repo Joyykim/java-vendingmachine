@@ -1,5 +1,7 @@
 package vendingmachine.model;
 
+import vendingmachine.exception.VendingMachineException;
+
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -20,26 +22,23 @@ public enum Coin {
         return Arrays.stream(values())
                 .filter(coin -> coin.value == value)
                 .findAny()
-                .orElseThrow(() -> new IllegalArgumentException("해당 금액의 동전은 존재하지 않습니다."));
+                .orElseThrow(() -> new VendingMachineException("해당 금액의 동전은 존재하지 않습니다. value:" + value));
     }
 
     public static List<Coin> orderedByValue() {
-        return Arrays.stream(values())
+        return ordered(Arrays.asList(values()));
+    }
+
+    public static List<Coin> ordered(List<Coin> coins) {
+        return coins.stream()
                 .sorted((o1, o2) -> Integer.compare(o2.value, o1.value))
                 .collect(Collectors.toList());
     }
-
 
     public static List<Integer> valueList() {
         return Arrays.stream(Coin.values())
                 .map(Coin::getValue)
                 .collect(Collectors.toList());
-    }
-
-
-
-    public boolean isSmallerThan(int remainingChanges) {
-        return this.value <= remainingChanges;
     }
 
     public int getValue() {

@@ -1,10 +1,10 @@
 package vendingmachine.model;
 
-import java.util.ArrayList;
+import vendingmachine.exception.VendingMachineException;
+
 import java.util.Arrays;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public class Product {
 
@@ -13,21 +13,38 @@ public class Product {
     private final int price;
 
     public Product(String name, int amount, int price) {
+        validatePrice(price);
         this.name = name;
         this.amount = amount;
         this.price = price;
     }
 
-    public static List<Product> getProducts(String str) {
-        Pattern pattern = Pattern.compile("[\\Q[\\E](.*?),(.*?),(.*?)[\\Q]\\E]");
-        Matcher matcher = pattern.matcher(str);
-
-        List<Product> result = new ArrayList<>();
-        while (matcher.find()) {
-            Product product = getProduct(matcher.group());
-            result.add(product);
+    private void validatePrice(int price) {
+        if (price < 100) {
+            throw new VendingMachineException("상품 최소 금액은 100원입니다.");
         }
-        return result;
+        if (price % 10 != 0) {
+            throw new VendingMachineException("상품 최소 금액은 10으로 나누어 떨어져야 합니다.");
+        }
+    }
+
+    public Product(String name, String amount, String price) {
+        this(name, Integer.parseInt(amount), Integer.parseInt(price));
+    }
+
+    public static List<Product> getProducts(String str) {
+        return Arrays.stream(str.split(";"))
+                .map(Product::getProduct)
+                .collect(Collectors.toList());
+    }
+
+    public static Product getProduct(String productStr) {
+        if (!productStr.startsWith("[") || !productStr.endsWith("]")) {
+            throw new VendingMachineException("올바른 형식이 아닙니다");
+        }
+        productStr = productStr.substring(1, productStr.length() - 1);
+        String[] separatedString = productStr.split(",");
+        return new Product(separatedString[0], separatedString[1], separatedString[2]);
     }
 
     public String getName() {
@@ -42,25 +59,11 @@ public class Product {
         return price;
     }
 
-    private static Product getProduct(String productString) {
-        productString = productString
-                .replace("[", "")
-                .replace("]", "");
-
-        List<String> productValues = Arrays.asList(productString.split(","));
-
-        return new Product(
-                productValues.get(0),
-                Integer.parseInt(productValues.get(1)),
-                Integer.parseInt(productValues.get(2))
-        );
-    }
-
     public boolean sameName(String name) {
         return this.name.equals(name);
     }
 
-    public boolean isAmountEmpty() {
+    public boolean isSoldOut() {
         return amount == 0;
     }
 
