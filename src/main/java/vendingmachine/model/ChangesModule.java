@@ -1,6 +1,7 @@
 package vendingmachine.model;
 
 import com.woowahan.techcourse.utils.Randoms;
+import vendingmachine.exception.VendingMachineException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,6 +20,10 @@ public class ChangesModule {
 
     private static List<Coin> initChanges(int initAmount) {
         List<Integer> coinValues = Coin.valueList();
+
+        if (initAmount % 10 != 0) {
+            throw new VendingMachineException("자판기 투입금액은 10으로 나누어 떨어져야 합니다.");
+        }
 
         List<Coin> changes = new ArrayList<>();
         while (initAmount > 0) {

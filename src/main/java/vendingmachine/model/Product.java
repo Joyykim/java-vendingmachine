@@ -24,12 +24,8 @@ public class Product {
             throw new VendingMachineException("상품 최소 금액은 100원입니다.");
         }
         if (price % 10 != 0) {
-            throw new VendingMachineException("상품 최소 금액은 10으로 나누어 떨어져야 합니다.");
+            throw new VendingMachineException("상품 금액은 10으로 나누어 떨어져야 합니다.");
         }
-    }
-
-    public Product(String name, String amount, String price) {
-        this(name, Integer.parseInt(amount), Integer.parseInt(price));
     }
 
     public static List<Product> getProducts(String str) {
@@ -39,12 +35,32 @@ public class Product {
     }
 
     public static Product getProduct(String productStr) {
+        productStr = stripBracket(productStr);
+        String[] separatedString = productStr.split(",");
+
+        if (separatedString.length != 3) {
+            throw new VendingMachineException("올바른 형식이 아닙니다");
+        }
+
+        String name = separatedString[0];
+        int amount = parseInt(separatedString[1]);
+        int price = parseInt(separatedString[2]);
+        return new Product(name, amount, price);
+    }
+
+    private static String stripBracket(String productStr) {
         if (!productStr.startsWith("[") || !productStr.endsWith("]")) {
             throw new VendingMachineException("올바른 형식이 아닙니다");
         }
-        productStr = productStr.substring(1, productStr.length() - 1);
-        String[] separatedString = productStr.split(",");
-        return new Product(separatedString[0], separatedString[1], separatedString[2]);
+        return productStr.substring(1, productStr.length() - 1);
+    }
+
+    private static int parseInt(String string) {
+        try {
+            return Integer.parseInt(string);
+        } catch (NumberFormatException e) {
+            throw new VendingMachineException("올바른 형식이 아닙니다");
+        }
     }
 
     public String getName() {
