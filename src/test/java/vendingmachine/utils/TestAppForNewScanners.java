@@ -1,6 +1,4 @@
-package scanner;
-
-import vendingmachine.utils.NewScanners;
+package vendingmachine.utils;
 
 public class TestAppForNewScanners {
 

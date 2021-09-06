@@ -1,10 +1,9 @@
-package scanner;
+package vendingmachine.utils;
 
 import org.assertj.core.util.Strings;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import vendingmachine.utils.NewScanners;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -16,7 +15,7 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class ScannersTest {
+public class NewScannersTest {
 
     @ParameterizedTest
     @MethodSource
