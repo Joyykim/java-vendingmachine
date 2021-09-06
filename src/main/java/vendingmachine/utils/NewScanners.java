@@ -30,30 +30,42 @@ public class NewScanners {
     }
 
     private static void makeNewScannerIfScannerIsClosed() {
-        if (scannerIsClosed()) {
-            // scannerIsClosed()가 true인 것이 테스트가 끝난 시점이란 보장이 없음.
-            // 스캐너의 source가 끝나지 않았다면(인풋스트림에 원소가 남아있다면) scannerIsClosed()가 false를 반환
-            // scanner.close();
+        if (scannerIsClosed_ver1()) {
             scanner = getScanner();
         }
     }
 
-    private static boolean scannerIsClosed() {
+    /**
+     * 리플렉션 사용하여 closed 필드 검사
+     * 단점: NoSuchFieldException, IllegalAccessException 발생시 후처리하기 애매
+     */
+    private static boolean scannerIsClosed_ver1() {
         try {
-            // 따라서 새로운 스캐너를 생성해줘야 하는 타이밍은
-            // 1. 테스트 시작할 때 넣어준 입력 소스가 모두 소모됨 (sourceClosed로 검사)
-            // 2. 테스트 후 직접 close()를 해줌 (closed로 검사)
-            return scannerFieldIsTrue("sourceClosed") || scannerFieldIsTrue("closed");
+            return isClosed();
         } catch (NoSuchFieldException | IllegalAccessException e) {
             System.err.println("리플렉션 중 에러 발생");
         }
         return true;
     }
 
-    private static boolean scannerFieldIsTrue(String fieldName) throws NoSuchFieldException, IllegalAccessException {
-        Field closedField = Scanner.class.getDeclaredField(fieldName);
+    private static boolean isClosed() throws NoSuchFieldException, IllegalAccessException {
+        Field closedField = Scanner.class.getDeclaredField("closed");
         closedField.setAccessible(true);
         return closedField.getBoolean(scanner);
+    }
+
+    /**
+     * hasNext() 사용하여 closed 필드 검사
+     * 단점: IllegalStateException이 다른 원인으로 발생할 가능성있음
+     *      "Scanner closed" 라는 메세지로 검증하는 방법은 naive함
+     */
+    private static boolean scannerIsClosed_ver2() {
+        try {
+            scanner.hasNext();
+        } catch (IllegalStateException e) {
+            return "Scanner closed".equals(e.getMessage());
+        }
+        return false;
     }
 
     private static Scanner getScanner() {
