@@ -1,16 +1,19 @@
 package vendingmachine;
 
+import com.woowahan.techcourse.utils.Console;
 import com.woowahan.techcourse.utils.Randoms;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.MockedStatic;
-import vendingmachine.utils.NewScanners;
 
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.OutputStream;
+import java.io.PrintStream;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
@@ -25,31 +28,22 @@ import static org.mockito.Mockito.mockStatic;
 public class ApplicationTest {
 
     private static final String ERROR_PREFIX = "[ERROR]";
-    private static final Duration SIMPLE_TEST_TIMEOUT = Duration.ofSeconds(3);
+    private static final Duration SIMPLE_TEST_TIMEOUT = Duration.ofSeconds(5);
 
     private PrintStream standard;
     private OutputStream captor;
 
-    @AfterEach
-    void tearDown() {
-        NewScanners.close(); // 꼭 해줘야함!
-        System.setOut(standard);
-        System.out.println(captor);
-    }
-
-    private void given(String... args) {
-        final List<String> arguments = Arrays.asList(args);
-        final byte[] buf = String.join("\n", arguments).getBytes();
-        final InputStream inputStream = new ByteArrayInputStream(buf);
-        System.setIn(inputStream);
-
+    @BeforeEach
+    void setUp() {
         standard = System.out;
         captor = new ByteArrayOutputStream();
         System.setOut(new PrintStream(captor));
     }
 
-    private String getOutPut() {
-        return captor.toString().trim();
+    @AfterEach
+    void tearDown() {
+        System.setOut(standard);
+        System.out.println(captor);
     }
 
     private void assertSimpleTest(final Executable executable) {
@@ -59,12 +53,14 @@ public class ApplicationTest {
     @Test
     void success() {
         // given
-        given("450", "[콜라,20,1500];[사이다,10,1000]", "3000", "콜라", "사이다");
+        try (final MockedStatic<Randoms> mockRandoms = mockStatic(Randoms.class);
+             final MockedStatic<Console> mockConsole = mockStatic(Console.class)) {
 
-        // when
-        try (final MockedStatic<Randoms> mock = mockStatic(Randoms.class)) {
-            mock.when(() -> Randoms.pick(anyList())).thenReturn(100, 100, 100, 100, 50);
-//            assertSimpleTest(() -> );
+            mockRandoms.when(() -> Randoms.pickNumberInList(anyList())).thenReturn(100, 100, 100, 100, 50);
+            List<String> args = Arrays.asList("450", "[콜라,20,1500];[사이다,10,1000]", "3000", "콜라", "사이다");
+            mockConsole(args, mockConsole);
+
+            // when
             Application.main(new String[]{});
         }
 
@@ -75,19 +71,31 @@ public class ApplicationTest {
         assertThat(outPut).contains("50원 - 1개");
     }
 
+    private String getOutPut() {
+        return captor.toString().trim();
+    }
+
     @ParameterizedTest
     @MethodSource({"상품여러개_입력_예외테스트", "상품한개_입력_예외테스트", "구매_예외테스트", "자판기_보유금액_예외테스트"})
     void exception(List<String> args) {
-        // given
-        given(args.toArray(String[]::new));
+        try (final MockedStatic<Randoms> mockRandoms = mockStatic(Randoms.class);
+             final MockedStatic<Console> mockConsole = mockStatic(Console.class)) {
 
-        // when
-        try (final MockedStatic<Randoms> mock = mockStatic(Randoms.class)) {
-            mock.when(() -> Randoms.pick(anyList())).thenReturn(100, 100, 100, 100, 50);
-            assertSimpleTest(() -> assertThatThrownBy(() -> Application.main(new String[0]))
+            mockRandoms.when(() -> Randoms.pickNumberInList(anyList())).thenReturn(100, 100, 100, 100, 50);
+            mockConsole(args, mockConsole);
+
+            assertThatThrownBy(() -> Application.main(new String[]{}))
                     .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageStartingWith(ERROR_PREFIX));
+                    .hasMessageStartingWith(ERROR_PREFIX);
         }
+    }
+
+    private void mockConsole(List<String> args, MockedStatic<Console> mockConsole) {
+        mockConsole.when(Console::readLine).thenReturn(args.get(0), args.subList(1, args.size()).toArray());
+    }
+
+    private static Arguments toArguments(String... s) {
+        return Arguments.of(Arrays.asList(s));
     }
 
     private static Stream<Arguments> 상품여러개_입력_예외테스트() {
@@ -135,9 +143,5 @@ public class ApplicationTest {
                 toArguments("9"),
                 toArguments("1001")
         );
-    }
-
-    private static Arguments toArguments(String... s) {
-        return Arguments.of(Arrays.asList(s));
     }
 }

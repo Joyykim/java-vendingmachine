@@ -1,10 +1,10 @@
 package vendingmachine.view;
 
+import com.woowahan.techcourse.utils.Console;
 import vendingmachine.model.Changes;
 import vendingmachine.model.Coin;
 import vendingmachine.model.Product;
 import vendingmachine.model.VendingMachine;
-import vendingmachine.utils.NewScanners;
 
 import java.util.List;
 
@@ -44,21 +44,21 @@ public class ConsoleView {
 
     public static int askVendingMachineInitialAmount() {
         println("자판기가 보유하고 있는 금액을 입력해 주세요.");
-        return NewScanners.nextInt();
+        return Integer.parseInt(Console.readLine());
     }
 
     public static int askInputMoney() {
         println("투입할 금액을 입력해 주세요.");
-        return NewScanners.nextInt();
+        return Integer.parseInt(Console.readLine());
     }
 
     public static List<Product> askProducts() {
         println("상품명과 수량, 금액을 입력해 주세요.");
-        return Product.getProducts(NewScanners.next());
+        return Product.getProducts(Console.readLine());
     }
 
     public static String askProductToBuy() {
         System.out.println("구매할 상품명을 입력해 주세요.");
-        return NewScanners.next();
+        return Console.readLine();
     }
 }

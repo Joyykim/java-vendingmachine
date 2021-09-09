@@ -27,7 +27,7 @@ public class ChangesModule {
 
         List<Coin> changes = new ArrayList<>();
         while (initAmount > 0) {
-            int pickedCoin = Randoms.pick(coinValues);
+            int pickedCoin = Randoms.pickNumberInList(coinValues);
             if (initAmount < pickedCoin) {
                 continue;
             }
